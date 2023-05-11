@@ -1,0 +1,40 @@
+*{
+    font-family: 'Roboto', sans-serif;
+}
+
+a{
+    text-decoration: none;
+}
+
+.underlinee{
+    height: 5px;
+    width: 400px;
+    background-color: red;
+    border-radius: 20px;
+}
+
+.underline{
+    height: 5px;
+    width: 150px;
+    background-color: red;
+    border-radius: 20px;
+}
+
+.bg-f2f2f2{
+    background-color: #f2f2f2;
+}
+
+.carousel-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
+}
+
+.carousel-caption {
+    transform: translateY(50%);
+    bottom: 27% !important;
+}
