@@ -1,4 +1,5 @@
-"#Gharguti" - This web based application is an attempt to stimulate the traditional 
+**"#Gharguti"**
+This web based application is an attempt to stimulate the traditional 
 Home-cooked meal service and such individual small scale business like 
 “#Gharguti” to grow better in the era of ‘online-food-order’. The website is 
 system independent and can be accessed from any device. It enables the 
