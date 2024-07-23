@@ -55,6 +55,7 @@ include('includes/header.php');
                         <hr class="dark horizontal my-0" />
                         <div class="card-footer p-3">
                             <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>List of all menu or update menu</p>
+                            <br>
                         </div>
                     </div>
                 </div>
