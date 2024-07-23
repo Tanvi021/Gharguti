@@ -89,7 +89,7 @@ include('authenticate.php');
                             <div class="">
                                 <input type="hidden" name="payment_mode" value="COD">
                                 <button type="submit" name="placeOrderBtn" class="btn btn-success w-100">Confirm and place order | COD</button>
-                                <div id="paypal-button-container"></div>
+                                <div id="paypal-button-container" class="mt-3"></div>
                             </div>  
                         </div>
                     </div>
@@ -104,107 +104,92 @@ include('authenticate.php');
 
 <!-- Initialize the JS-SDK -->
 <script
-    src="https://www.paypal.com/sdk/js?client-id=AUxRct-3jxtlZKCDoTsuf1tdpp6SCEHw6Y_PK55usYywUkutygwXpfkBCWKZSmyWnKghGOErwUR8SMB8&buyer-country=US&currency=USD&components=buttons&enable-funding=venmo"                                      
+    src="https://www.paypal.com/sdk/js?client-id=AXob2vDdlvPCHla-kion3XuodrFdbLYl8s6WnZJ4NAvOzkhCGUJh9CJ-Sm6UxHM-Q7u6polRFdzdurmn&currency=USD&components=buttons"                                      
     data-sdk-integration-source="developer-studio"
 ></script>
 
 <script>
-    window.paypal
-  .Buttons({
-    style: {
-      shape: "rect",
-      layout: "vertical",
-      color: "gold",
-      label: "paypal",
-    },
-    message: {
-      amount: '<?= $totalPrice ?>',
-    } ,
-    async createOrder() {
-      try {
-        const response = await fetch("/api/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // use the "body" param to optionally pass additional order information
-          // like product ids and quantities
-          body: JSON.stringify({
-            cart: [
-              {
-                id: "YOUR_PRODUCT_ID",
-                quantity: "YOUR_PRODUCT_QUANTITY",
-              },
-            ],
-          }),
-        });
+    paypal.Buttons({
+        onClick(){
+            var name = $('#name').val();
+            var email = $('#email').val();
+            var phone = $('#phone').val();
+            var pincode = $('#pincode').val();
+            var address = $('#address').val();
+            if(name.length == 0){
+                $('.name').text("*This field is mandatory!");
+            }else{
+                $('.name').text("");
+            }
+            if(email.length == 0){
+                $('.email').text("*This field is mandatory!");
+            }else{
+                $('.email').text("");
+            }
+            if(phone.length == 0){
+                $('.phone').text("*This field is mandatory!");
+            }else{
+                $('.phone').text("");
+            }
+            if(pincode.length == 0){
+                $('.pincode').text("*This field is mandatory!");
+            }else{
+                $('.pincode').text("");
+            }
+            if(address.length == 0){
+                $('.address').text("*This field is mandatory!");
+            }else{
+                $('.address').text("");
+            }
 
-        const orderData = await response.json();
+            if(name.length == 0 || email.length == 0 || phone.length == 0 || pincode.length == 0 || address.length == 0){
+                return false;
+            }
+        },
+        //sets up transaction when a payment button is clicked
+        createOrder: (data, actions) => {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: '0.1'//' // Can  also reference a variable or function
+                    }
+                }]
+            });
+        },
+        // Finalizing payment after transaction approval
+        onApprove: (data, actions) => {
+            return actions.order.capture().then(function(orderData) {
 
-        if (orderData.id) {
-          return orderData.id;
+            const transaction = orderData.purchase_units[0].payments.capture[0];
+
+            var name = $('#name').val();
+            var email = $('#email').val();
+            var phone = $('#phone').val();
+            var pincode = $('#pincode').val();
+            var address = $('#address').val();
+
+            var data = {
+                'name': name,
+                'email': email,
+                'phone': phone,
+                'pincode': pincode,
+                'address': address,
+                'payment_mode': "Paid by Paypal",
+                'payment_id': transaction.id,
+            }
+
+            $.ajax({
+                method: "POST",
+                url: "functions/placeorder.php",
+                data: data,
+                success: function (response) {
+                    if(response == 201){
+                        alertify.success("Order Placed successfully!");
+                        actions.redirect('my-orders.php');
+                    }
+                }
+            });
+            });
         }
-        const errorDetail = orderData?.details?.[0];
-        const errorMessage = errorDetail
-          ? `${errorDetail.issue} ${errorDetail.description} (${orderData.debug_id})`
-          : JSON.stringify(orderData);
-
-        throw new Error(errorMessage);
-      } catch (error) {
-        console.error(error);
-        // resultMessage(`Could not initiate PayPal Checkout...<br><br>${error}`);
-      }
-    } ,
-    async onApprove(data, actions) {
-      try {
-        const response = await fetch(`/api/orders/${data.orderID}/capture`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const orderData = await response.json();
-        // Three cases to handle:
-        //   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
-        //   (2) Other non-recoverable errors -> Show a failure message
-        //   (3) Successful transaction -> Show confirmation or thank you message
-
-        const errorDetail = orderData?.details?.[0];
-
-        if (errorDetail?.issue === "INSTRUMENT_DECLINED") {
-          // (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
-          // recoverable state, per
-          // https://developer.paypal.com/docs/checkout/standard/customize/handle-funding-failures/
-          return actions.restart();
-        } else if (errorDetail) {
-          // (2) Other non-recoverable errors -> Show a failure message
-          throw new Error(`${errorDetail.description} (${orderData.debug_id})`);
-        } else if (!orderData.purchase_units) {
-          throw new Error(JSON.stringify(orderData));
-        } else {
-          // (3) Successful transaction -> Show confirmation or thank you message
-          // Or go to another URL:  actions.redirect('thank_you.html');
-          const transaction =
-            orderData?.purchase_units?.[0]?.payments?.captures?.[0] ||
-            orderData?.purchase_units?.[0]?.payments?.authorizations?.[0];
-          resultMessage(
-            `Transaction ${transaction.status}: ${transaction.id}<br>
-          <br>See console for all available details`
-          );
-          console.log(
-            "Capture result",
-            orderData,
-            JSON.stringify(orderData, null, 2)
-          );
-        }
-      } catch (error) {
-        console.error(error);
-        resultMessage(
-          `Sorry, your transaction could not be processed...<br><br>${error}`
-        );
-      }
-    } ,
-  })
-  .render("#paypal-button-container");
+    }).render('#paypal-button-container');
 </script>

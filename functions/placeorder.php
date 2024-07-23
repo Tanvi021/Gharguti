@@ -67,9 +67,14 @@ if(isset($_SESSION['auth']))
             $deleteCartQuery = "DELETE FROM carts WHERE user_id='$userId' ";
             $deleteCartQuery_run = mysqli_query($con, $deleteCartQuery);
 
-            $_SESSION['message'] = "Order placed successfully";
-            header('Location: ../my-orders.php');
-            die();
+            if($payment_mode == "COD"){
+                $_SESSION['message'] = "Order placed successfully";
+                header('Location: ../my-orders.php');
+                die();
+            }
+            else{
+                echo 201;
+            }
 
         }
     }
